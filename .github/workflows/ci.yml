@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Syntax, local and dynamic imports, import cycles, Cyrillic-safe regex boundaries,
+  # ESLint and Prettier.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+  # Unit tests of every service. They never reach MongoDB or neighbouring services:
+  # shared/testing/disableNetwork.js blocks fetch, and the database is replaced in tests.
+  test:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            microservices/*/package-lock.json
+            web-interface/package-lock.json
+      - run: npm ci
+      - name: Install service dependencies
+        run: |
+          for service in microservices/ai-gateway microservices/ai-slots microservices/ai-tools \
+            microservices/ai-planner web-interface; do
+            npm --prefix "$service" ci
+          done
+      - run: npm test

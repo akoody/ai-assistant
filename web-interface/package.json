@@ -1,0 +1,25 @@
+{
+  "name": "web-interface",
+  "version": "1.0.0",
+  "description": "Веб-интерфейс для тестирования AI микросервисов",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test src/*.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^4.17.2",
+    "undici": "^7.22.0"
+  },
+  "keywords": [
+    "web",
+    "interface",
+    "test"
+  ],
+  "author": "",
+  "license": "ISC"
+}

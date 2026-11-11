@@ -1,0 +1,742 @@
+openapi: 3.0.0
+info:
+    title: Kassir Core API - Search & Categories
+    description: Short version of Kassir Core API focused on search, categories, and compilations
+    version: 1.0.0
+servers:
+    - url: https://api.kassirdev.ru/
+
+paths:
+    /api/categories:
+        get:
+            tags:
+                - Categories
+            summary: Возвращает список главных родительских категорий
+            parameters:
+                - name: domain
+                  in: query
+                  schema:
+                      type: string
+                      default: msk.kassir.ru
+            responses:
+                '200':
+                    description: Список категорий мероприятий
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/WebsiteActivityCategory'
+            security:
+                - BearerAuth: []
+
+    /api/categories/{id}:
+        get:
+            tags:
+                - Categories
+            summary: Возвращает конкретную категорию
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+                      description: ID категории
+                - name: domain
+                  in: query
+                  schema:
+                      type: string
+                      default: msk.kassir.ru
+            responses:
+                '200':
+                    description: Детали категории мероприятий
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WebsiteActivityCategory'
+            security:
+                - BearerAuth: []
+
+    /api/categories/root:
+        get:
+            tags:
+                - Categories
+            summary: Возвращает корневые категории мероприятий
+            parameters:
+                - name: domain
+                  in: query
+                  schema:
+                      type: string
+                      default: msk.kassir.ru
+            responses:
+                '200':
+                    description: Список корневых категорий мероприятий
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/WebsiteActivityCategory'
+            security:
+                - BearerAuth: []
+
+    /api/compilations/{id}:
+        get:
+            tags:
+                - Compilations
+            summary: Возвращает конкретную подборку
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+                      description: ID подборки
+                - name: domain
+                  in: query
+                  schema:
+                      type: string
+                      default: msk.kassir.ru
+            responses:
+                '200':
+                    description: Детали подборки
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Compilation'
+            security:
+                - BearerAuth: []
+
+    /api/compilations/homepage/{platformStateValue}:
+        get:
+            tags:
+                - Compilations
+            summary: Возвращает подборки для главной страницы
+            parameters:
+                - name: platformStateValue
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      default: website
+                      description: Значение платформы
+                - name: domain
+                  in: query
+                  schema:
+                      type: string
+                      default: msk.kassir.ru
+            responses:
+                '200':
+                    description: Подборки для главной страницы
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CompilationKit'
+            security:
+                - BearerAuth: []
+
+    /api/search:
+        get:
+            tags:
+                - Search
+            summary: Поиск по мероприятиям, событиям и местам
+            parameters:
+                - name: domain
+                  in: query
+                  schema:
+                    type: string
+                    default: msk.kassir.ru
+                - name: keyword
+                  in: query
+                  description: Поисковый запрос
+                  required: false
+                  schema:
+                    type: string
+                    example: null
+                    default: null
+                - name: isArtistsPage
+                  in: query
+                  description: Включает поиск по артистам
+                  required: false
+                  schema:
+                    type: integer
+                    default: 0
+                - name: isArtistPage
+                  in: query
+                  description: Включает поиск по странице артиста
+                  required: false
+                  schema:
+                    type: integer
+                    default: 0
+                - name: roleSlug
+                  in: query
+                  description: Слаг роли артиста
+                  required: false
+                  schema:
+                    type: string
+                    example: null
+                    default: null
+                - name: artistId
+                  in: query
+                  description: ID артиста для поиска его событий
+                  required: false
+                  schema:
+                    type: integer
+                    example: null
+                    default: null
+                - name: searchKey
+                  in: query
+                  description: Ключ поиска для пагинации событий артиста
+                  required: false
+                  schema:
+                    type: string
+                    example: null
+                    default: null
+                - name: isVenuesPage
+                  in: query
+                  description: Включает поиск по площадкам
+                  required: false
+                  schema:
+                    type: integer
+                    example: null
+                    default: 0
+                - name: venueCategoryId
+                  in: query
+                  description: ID категории площадки
+                  required: false
+                  schema:
+                    type: integer
+                - name: venueId
+                  in: query
+                  description: ID площадки
+                  required: false
+                  schema:
+                    oneOf:
+                      - type: integer
+                      - type: array
+                - name: eventId
+                  in: query
+                  description: ID события
+                  required: false
+                  schema:
+                    type: integer
+                - name: compilationId
+                  in: query
+                  description: ID подборки
+                  required: false
+                  schema:
+                    type: integer
+                - name: categoryId
+                  in: query
+                  description: ID категории
+                  required: false
+                  schema:
+                    type: integer
+                - name: subcategoryId
+                  in: query
+                  description: ID подкатегории
+                  required: false
+                  schema:
+                    type: integer
+                - name: hasDiscount
+                  in: query
+                  description: Флаг наличия скидки
+                  required: false
+                  schema:
+                    type: boolean
+                - name: isPushkin
+                  in: query
+                  description: Флаг пушкинской карты
+                  required: false
+                  schema:
+                    type: boolean
+                - name: pageSize
+                  in: query
+                  description: Кол-во элементов на странице
+                  required: false
+                  schema:
+                    type: integer
+                    default: 30
+                - name: dateFrom
+                  in: query
+                  description: Дата начала периода
+                  required: false
+                  schema:
+                    type: string
+                    example: 31.12.1970
+                - name: dateTo
+                  in: query
+                  description: Дата конца периода
+                  required: false
+                  schema:
+                    type: string
+                    example: 31.12.1970
+                    default: null
+                - name: sortMode
+                  in: query
+                  description: 'Тип сортировки: 0 – популярные, 1 – ближайшие'
+                  required: false
+                  schema:
+                    type: integer
+                    default: 0
+                - name: firstLetter
+                  in: query
+                  description: Поиск по букве (для алфавитной фильтрации)
+                  required: false
+                  schema:
+                    type: string
+                - name: paperType
+                  in: query
+                  description: Тип поиска печатных изданий (news, article, schedule_change)
+                  required: false
+                  schema:
+                    type: string
+                - name: tagId
+                  in: query
+                  description: ID тега (для статей)
+                  required: false
+                  schema:
+                    type: integer
+                - name: widgetKey
+                  in: query
+                  description: ApiKey виджета
+                  required: false
+                  schema:
+                    type: string
+                - name: suburbId
+                  in: query
+                  description: Идентификаторы пригородов
+                  required: false
+                  schema:
+                    type: string
+                - name: suburbSlug
+                  in: query
+                  description: Slug страницы пригородов
+                  required: false
+                  schema:
+                    type: string
+                - name: eventPlannerId
+                  in: query
+                  description: ID организатора для поиска его событий
+                  required: false
+                  schema:
+                    type: integer
+                - name: priceMin
+                  in: query
+                  description: Минимальная цена мероприятия
+                  required: false
+                  schema:
+                    type: number
+                - name: priceMax
+                  in: query
+                  description: Максимальная цена мероприятия
+                  required: false
+                  schema:
+                    type: number
+
+            responses:
+                '200':
+                    description: Результаты поиска
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SearchResult'
+            security:
+                - BearerAuth: []
+
+    /api/search/saleable-entities:
+        get:
+            tags:
+                - Search
+            summary: Быстрый поиск по продаваемым сущностям
+            parameters:
+                - name: domain
+                  in: query
+                  schema:
+                      type: string
+                      default: msk.kassir.ru
+                - name: q
+                  in: query
+                  schema:
+                      type: string
+                      description: Поисковый запрос
+                - name: limit
+                  in: query
+                  schema:
+                      type: integer
+                      default: 10
+                      description: Лимит результатов
+            responses:
+                '200':
+                    description: Результаты быстрого поиска
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/QuickSearchResult'
+            security:
+                - BearerAuth: []
+
+    /api/homepage/compilations/{compilationId}:
+        get:
+            tags:
+                - Compilations
+            summary: Возвращает элементы подборки для главной страницы
+            parameters:
+                - name: compilationId
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+                      description: ID подборки
+                - name: domain
+                  in: query
+                  schema:
+                      type: string
+                      default: msk.kassir.ru
+                - name: offset
+                  in: query
+                  schema:
+                      type: integer
+                      description: Смещение для пагинации
+            responses:
+                '200':
+                    description: Элементы подборки
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/CompilationItem'
+            security:
+                - BearerAuth: []
+
+    /api/cities:
+        get:
+            tags:
+                - Cities
+            summary: Возвращает список городов
+            parameters:
+                - name: domain
+                  in: query
+                  schema:
+                      type: string
+                      default: msk.kassir.ru
+            responses:
+                '200':
+                    description: Список городов
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/City'
+            security:
+                - BearerAuth: []
+
+    /api/cities/current:
+        get:
+            tags:
+                - Cities
+            summary: Возвращает текущий город
+            parameters:
+                - name: domain
+                  in: query
+                  schema:
+                      type: string
+                      default: msk.kassir.ru
+            responses:
+                '200':
+                    description: Информация о текущем городе
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/City'
+            security:
+                - BearerAuth: []
+
+components:
+    securitySchemes:
+        BearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+
+    schemas:
+        WebsiteActivityCategory:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: Уникальный идентификатор категории
+                slug:
+                    type: string
+                    description: URL-слаг категории
+                name:
+                    type: string
+                    description: Название категории
+                description:
+                    type: string
+                    description: Описание категории
+                status:
+                    type: integer
+                    description: Статус категории
+                posterImage:
+                    $ref: '#/components/schemas/Image'
+                parentId:
+                    type: integer
+                    description: ID родительской категории
+                domain:
+                    type: string
+                    description: Домен
+
+        Activity:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: Уникальный идентификатор мероприятия
+                backofficeId:
+                    type: integer
+                    description: Идентификатор мероприятия из Тикетрейна
+                title:
+                    type: string
+                    description: Название мероприятия
+                description:
+                    type: string
+                    description: Описание мероприятия
+                status:
+                    type: integer
+                    description: Статус мероприятия
+                slug:
+                    type: string
+                    description: URL-слаг мероприятия
+                websiteActivityCategory:
+                    $ref: '#/components/schemas/WebsiteActivityCategory'
+                posterImage:
+                    $ref: '#/components/schemas/Image'
+                horizontalImage:
+                    $ref: '#/components/schemas/Image'
+                domain:
+                    type: string
+                    description: Домен
+
+        Compilation:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: Уникальный идентификатор подборки
+                title:
+                    type: string
+                    description: Название подборки
+                slug:
+                    type: string
+                    description: URL-слаг подборки
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/CompilationItem'
+                domain:
+                    type: string
+                    description: Домен
+
+        CompilationKit:
+            type: object
+            properties:
+                compilations:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Compilation'
+                banners:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Banner'
+
+        CompilationItem:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: ID элемента подборки
+                type:
+                    type: string
+                    description: Тип элемента (event, activity, venue)
+                title:
+                    type: string
+                    description: Название элемента
+                description:
+                    type: string
+                    description: Описание элемента
+                image:
+                    $ref: '#/components/schemas/Image'
+                url:
+                    type: string
+                    description: URL элемента
+
+        SearchResult:
+            type: object
+            properties:
+                total:
+                    type: integer
+                    description: Общее количество результатов
+                offset:
+                    type: integer
+                    description: Смещение результатов
+                limit:
+                    type: integer
+                    description: Лимит результатов
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/SearchResultItem'
+
+        QuickSearchResult:
+            type: object
+            properties:
+                suggestions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/SearchSuggestion'
+
+        SearchResultItem:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: ID найденного элемента
+                type:
+                    type: string
+                    description: Тип элемента (event, activity, venue)
+                    enum: [event, activity, venue]
+                title:
+                    type: string
+                    description: Название элемента
+                description:
+                    type: string
+                    description: Описание элемента
+                image:
+                    $ref: '#/components/schemas/Image'
+                url:
+                    type: string
+                    description: URL элемента
+                price:
+                    type: number
+                    description: Цена (если применимо)
+                date:
+                    type: string
+                    format: date-time
+                    description: Дата события (если применимо)
+                venue:
+                    type: string
+                    description: Место проведения (если применимо)
+
+        SearchSuggestion:
+            type: object
+            properties:
+                text:
+                    type: string
+                    description: Текст подсказки
+                type:
+                    type: string
+                    description: Тип подсказки
+                url:
+                    type: string
+                    description: URL для перехода
+
+        Image:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: ID изображения
+                name:
+                    type: string
+                    description: Название изображения
+                alt:
+                    type: string
+                    description: Альтернативный текст
+                file:
+                    type: string
+                    description: Путь к файлу
+                externalUrl:
+                    type: string
+                    description: Внешний URL изображения
+
+        Banner:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: ID баннера
+                title:
+                    type: string
+                    description: Заголовок баннера
+                description:
+                    type: string
+                    description: Описание баннера
+                image:
+                    $ref: '#/components/schemas/Image'
+                url:
+                    type: string
+                    description: URL для перехода
+                isActive:
+                    type: boolean
+                    description: Активен ли баннер
+
+        City:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: Уникальный идентификатор города
+                name:
+                    type: string
+                    description: Название города
+                title:
+                    type: string
+                    description: Заголовок города
+                slug:
+                    type: string
+                    description: URL-слаг города
+                domain:
+                    type: string
+                    description: Домен города
+                timezone:
+                    type: string
+                    description: Временная зона города
+                isFeatured:
+                    type: boolean
+                    description: Является ли город рекомендуемым
+                isPublic:
+                    type: boolean
+                    description: Является ли город публичным
+                suburbs:
+                    type: array
+                    description: Районы города
+                    items:
+                        $ref: '#/components/schemas/Suburb'
+
+        Suburb:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: Уникальный идентификатор района
+                name:
+                    type: string
+                    description: Название района
+                slug:
+                    type: string
+                    description: URL-слаг района
+                domain:
+                    type: string
+                    description: Домен района
+                isFeatured:
+                    type: boolean
+                    description: Является ли район рекомендуемым
+                isActive:
+                    type: boolean
+                    description: Активен ли район
+
+security:
+    - BearerAuth: []

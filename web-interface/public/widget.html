@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Виджет Кассир</title>
+    <link rel="stylesheet" href="widget-style.css?v=20260520-docked-collapsed-v1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@200..800&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Стили для iframe - убираем отступы и настраиваем позиционирование */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+        background: transparent;
+      }
+
+      #kassir-widget-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Контейнер для виджета -->
+    <div id="kassir-widget-container"></div>
+
+    <!-- Подключаем скрипт виджета -->
+    <script src="widget-app.js?v=20260520-docked-collapsed-v1"></script>
+    <script>
+      // Определяем API URL из параметров или используем текущий домен
+      const urlParams = new URLSearchParams(window.location.search);
+      const apiUrl = urlParams.get('apiUrl') || window.location.origin;
+      const clientId = urlParams.get('client_id') || urlParams.get('clientId') || null;
+
+      // Разрешенные домены-родители (kassir.ru и поддомены городов).
+      // Основная защита — CSP `frame-ancestors` на сервере, но здесь дополнительно проверяем postMessage origin.
+      const KASSIRDEV_MSK_HOST_RE = /^msk\.(stg|dev\d+)\.kassirdev\.ru$/;
+
+      function isAllowedParentOrigin(origin) {
+        try {
+          // Разрешаем same-origin (нужно для локального тестирования и стендов по IP/домену виджета)
+          if (origin === window.location.origin) return true;
+
+          const parentUrl = new URL(origin);
+          const host = parentUrl.hostname.toLowerCase();
+          if (host === 'localhost' || host === '127.0.0.1') return true;
+          if (host === 'kassir.ru' || host === 'www.kassir.ru') return true;
+          if (host === 'sferaai.ru' || host === 'www.sferaai.ru') return true;
+          if (host === 'kassirdev.ru' || host === 'www.kassirdev.ru') return true;
+          if (KASSIRDEV_MSK_HOST_RE.test(host)) return true;
+          return host.endsWith('.kassir.ru') || host.endsWith('.sferaai.ru');
+        } catch (e) {
+          return false;
+        }
+      }
+
+      let trustedParentOrigin = null;
+
+      // Инициализируем виджет после загрузки
+      window.addEventListener('DOMContentLoaded', function () {
+        const container = document.getElementById('kassir-widget-container');
+        if (window.KassirWidget && window.KassirWidget.init) {
+          window.KassirWidget.init({
+            container: container,
+            apiUrl: apiUrl,
+            clientId: clientId,
+            newUserButton: null,
+          });
+        }
+      });
+
+      // Обработка сообщений от родительской страницы (postMessage)
+      window.addEventListener('message', function (event) {
+        // Проверяем происхождение для безопасности (можно настроить)
+        if (!isAllowedParentOrigin(event.origin)) return;
+        trustedParentOrigin = event.origin;
+
+        const data = event.data;
+        if (data && data.type) {
+          switch (data.type) {
+            case 'createNewUser':
+              if (window.KassirWidget && window.KassirWidget.createNewUser) {
+                window.KassirWidget.createNewUser();
+              }
+              break;
+            case 'startNewChat':
+              if (window.KassirWidget && window.KassirWidget.startNewChat) {
+                window.KassirWidget.startNewChat();
+              }
+              break;
+            case 'show':
+              if (window.KassirWidget && window.KassirWidget.show) {
+                window.KassirWidget.show();
+              }
+              break;
+          }
+        }
+      });
+
+      // Уведомляем родительскую страницу о готовности
+      if (window.parent !== window) {
+        window.parent.postMessage(
+          { type: 'widgetReady', clientId: clientId },
+          trustedParentOrigin || '*'
+        );
+      }
+    </script>
+
+    <script>
+      window.addEventListener('DOMContentLoaded', (event) => {
+        const textarea = document.querySelector('textarea');
+
+        if (textarea) {
+          // Автоматическое изменение высоты при вводе текста
+          textarea.addEventListener('input', function () {
+            // Если поле пустое, удаляем все стили - вернется к CSS значению (35px)
+            if (!this.value || this.value.trim() === '') {
+              this.style.removeProperty('height');
+              this.style.removeProperty('min-height');
+              this.style.removeProperty('max-height');
+              return;
+            }
+            // Иначе автоматически подстраиваем под содержимое
+            this.style.height = '0px';
+            this.style.height = this.scrollHeight + 'px';
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

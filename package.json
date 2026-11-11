@@ -1,0 +1,23 @@
+{
+  "name": "widgetkassir",
+  "private": true,
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "start": "node scripts/manage-microservices.js",
+    "check": "node scripts/check-source.cjs && eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "test": "node scripts/test-project.cjs",
+    "test:shared": "node --test shared/*.test.js scripts/*.test.cjs",
+    "test:web": "npm --prefix web-interface test",
+    "archive": "node scripts/make-archive.js"
+  },
+  "devDependencies": {
+    "@eslint-community/regexpp": "^4.12.3",
+    "eslint": "^9.0.0",
+    "espree": "^10.4.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.9.10"
+  }
+}

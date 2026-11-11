@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Вход — Kassir Panel</title>
+    <link rel="stylesheet" href="/admin/admin.css" />
+  </head>
+
+  <body>
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-logo">
+          <div class="logo-icon">🎫</div>
+          <div>
+            <h1>Kassir Panel</h1>
+            <span>Панель управления</span>
+          </div>
+        </div>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="login">Логин</label>
+            <input
+              type="text"
+              id="login"
+              name="login"
+              placeholder="Введите логин"
+              autocomplete="username"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="password">Пароль</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Введите пароль"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+          <div id="errorAlert" class="alert alert-error"></div>
+          <button
+            type="submit"
+            class="btn btn-primary btn-full"
+            id="submitBtn"
+            style="margin-top: 8px"
+          >
+            <span id="btnText">Войти</span>
+            <span id="btnSpinner" class="spinner" style="display: none"></span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script type="module">
+      import { saveAuth, redirectIfLoggedIn, redirectByRole } from '/admin/auth.js';
+
+      redirectIfLoggedIn();
+
+      const form = document.getElementById('loginForm');
+      const errorAlert = document.getElementById('errorAlert');
+      const submitBtn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+
+      function showError(msg) {
+        errorAlert.textContent = msg;
+        errorAlert.classList.add('show');
+      }
+      function hideError() {
+        errorAlert.classList.remove('show');
+      }
+
+      function setLoading(val) {
+        submitBtn.disabled = val;
+        btnText.style.display = val ? 'none' : 'inline';
+        btnSpinner.style.display = val ? 'inline-block' : 'none';
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideError();
+        const login = document.getElementById('login').value.trim();
+        const password = document.getElementById('password').value;
+        if (!login || !password) return showError('Введите логин и пароль');
+
+        setLoading(true);
+        try {
+          const res = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login, password }),
+          });
+          const data = await res.json();
+          if (!data.success) {
+            showError(data.error || 'Ошибка авторизации');
+          } else {
+            saveAuth(data.token, { login: data.login, role: data.role });
+            redirectByRole(data.role);
+          }
+        } catch (err) {
+          showError('Ошибка соединения с сервером');
+        } finally {
+          setLoading(false);
+        }
+      });
+    </script>
+  </body>
+</html>

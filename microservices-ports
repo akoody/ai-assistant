@@ -1,0 +1,5 @@
+ai-gateway:3001
+ai-slots:3002
+ai-tools:3003
+ai-planner:3004
+web-interface:8080

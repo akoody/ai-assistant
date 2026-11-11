@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Управление аккаунтами — Kassir Panel</title>
+    <link rel="stylesheet" href="/admin/admin.css" />
+  </head>
+
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🎫</div>
+          <div>
+            <div class="logo-text">Kassir</div>
+            <div class="logo-sub">Panel</div>
+          </div>
+        </div>
+        <nav class="sidebar-nav">
+          <a class="nav-link active" href="/admin/dashboard.html">
+            <span class="nav-icon">👥</span> Аккаунты
+          </a>
+          <a class="nav-link" href="/admin/metrics.html">
+            <span class="nav-icon">📊</span> Метрики
+          </a>
+          <a class="nav-link" href="/admin/widget.html">
+            <span class="nav-icon">💬</span> Виджет
+          </a>
+        </nav>
+        <div class="sidebar-actions">
+          <button class="btn btn-ghost btn-sidebar-action" id="changePasswordBtn">
+            🔐 Сменить пароль
+          </button>
+        </div>
+        <div class="sidebar-footer">
+          <div class="user-pill">
+            <div class="avatar" id="avatarInitial">A</div>
+            <div class="user-info">
+              <div class="user-name" id="sidebarLogin">—</div>
+              <div class="user-role">Администратор</div>
+            </div>
+            <button class="btn-logout" title="Выйти" id="logoutBtn">⏻</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <div class="main-content">
+        <div class="topbar">
+          <div>
+            <h2>Управление аккаунтами</h2>
+            <div class="topbar-sub">Создавайте и управляйте доступами клиентов</div>
+          </div>
+          <div class="topbar-actions">
+            <button class="btn btn-primary" id="createAccountBtn">+ Создать аккаунт</button>
+          </div>
+        </div>
+        <div class="page-body">
+          <!-- List -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Все аккаунты</div>
+                <div class="card-sub" id="accountCount">Загрузка...</div>
+              </div>
+            </div>
+            <div id="accountsContainer">
+              <div class="empty-state">
+                <div class="spinner"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Modal -->
+    <div class="modal-overlay" id="createModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">Новый аккаунт</div>
+          <button class="modal-close" id="closeModal">✕</button>
+        </div>
+        <div class="form-group">
+          <label for="newLogin">Логин</label>
+          <input type="text" id="newLogin" placeholder="Минимум 4 символа" />
+        </div>
+        <div class="form-group">
+          <label for="newPassword">Пароль</label>
+          <input type="password" id="newPassword" placeholder="Минимум 6 символов" />
+        </div>
+        <div id="createAlert" class="alert"></div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="cancelCreate">Отмена</button>
+          <button class="btn btn-primary" id="confirmCreate">
+            <span id="createBtnText">Создать</span>
+            <span id="createSpinner" class="spinner" style="display: none"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change password Modal -->
+    <div class="modal-overlay" id="passwordModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">Смена пароля</div>
+          <button class="modal-close" id="closePasswordModal">✕</button>
+        </div>
+
+        <div id="passwordStepLogin" class="password-step">
+          <div class="form-group">
+            <label for="passwordLogin">Логин пользователя</label>
+            <input type="text" id="passwordLogin" placeholder="Введите логин аккаунта" />
+          </div>
+        </div>
+
+        <div id="passwordStepOld" class="password-step" style="display: none">
+          <div class="form-group">
+            <label for="passwordOld">Текущий пароль</label>
+            <input type="password" id="passwordOld" placeholder="Введите текущий пароль" />
+          </div>
+        </div>
+
+        <div id="passwordStepNew" class="password-step" style="display: none">
+          <div class="form-group">
+            <label for="passwordNew">Новый пароль</label>
+            <input type="password" id="passwordNew" placeholder="Минимум 6 символов" />
+          </div>
+        </div>
+
+        <div id="passwordAlert" class="alert"></div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="passwordBackBtn" style="display: none">Назад</button>
+          <button class="btn btn-ghost" id="passwordCancelBtn">Отмена</button>
+          <button class="btn btn-primary" id="passwordNextBtn">
+            <span id="passwordNextText">Проверить логин</span>
+            <span id="passwordSpinner" class="spinner" style="display: none"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { requireAuth, getUser, logout, authFetch } from '/admin/auth.js';
+
+      if (!requireAuth()) {
+        /* redirect handled */
+      }
+      const user = getUser();
+      if (user?.role !== 'admin') {
+        window.location.href = '/admin/metrics.html';
+      }
+
+      document.getElementById('sidebarLogin').textContent = user?.login || '—';
+      document.getElementById('avatarInitial').textContent = (user?.login || 'A')[0].toUpperCase();
+      document.getElementById('logoutBtn').addEventListener('click', logout);
+      let cachedAccounts = [];
+
+      // ——— Load accounts ———
+      async function loadAccounts() {
+        const res = await authFetch('/api/admin/accounts');
+        if (!res) return;
+        const data = await res.json();
+        const container = document.getElementById('accountsContainer');
+        const count = document.getElementById('accountCount');
+        if (!data.success || !data.accounts.length) {
+          cachedAccounts = [];
+          count.textContent = '0 аккаунтов';
+          container.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><p>Нет аккаунтов</p></div>`;
+          return;
+        }
+        cachedAccounts = Array.isArray(data.accounts) ? data.accounts : [];
+        count.textContent = `${data.accounts.length} аккаунт${data.accounts.length === 1 ? '' : 'а(-ов)'}`;
+        container.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Логин</th>
+            <th>Роль</th>
+            <th>Создан</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.accounts
+            .map(
+              (acc) => `
+            <tr>
+              <td class="td-mono">${escHtml(acc.login)}</td>
+              <td><span class="badge badge-${acc.role}">${acc.role === 'admin' ? '👑 Админ' : '👁 Viewer'}</span></td>
+              <td class="td-mono">${formatDate(acc.createdAt)}</td>
+              <td>
+                ${acc.role !== 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount('${acc._id}', '${escHtml(acc.login)}')">Удалить</button>` : '<span style="color:var(--text3);font-size:12px">—</span>'}
+              </td>
+            </tr>
+          `
+            )
+            .join('')}
+        </tbody>
+      </table>
+    </div>`;
+      }
+
+      window.deleteAccount = async (id, login) => {
+        if (!confirm(`Удалить аккаунт «${login}»?`)) return;
+        const res = await authFetch(`/api/admin/accounts/${id}`, { method: 'DELETE' });
+        if (!res) return;
+        const data = await res.json();
+        if (data.success) {
+          loadAccounts();
+        } else {
+          alert(data.error || 'Ошибка удаления');
+        }
+      };
+
+      function escHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+      function formatDate(d) {
+        if (!d) return '—';
+        return new Date(d).toLocaleString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      }
+
+      // ——— Create modal ———
+      const modal = document.getElementById('createModal');
+      document.getElementById('createAccountBtn').addEventListener('click', () => {
+        document.getElementById('newLogin').value = '';
+        document.getElementById('newPassword').value = '';
+        hideCreateAlert();
+        modal.classList.add('show');
+      });
+      document
+        .getElementById('closeModal')
+        .addEventListener('click', () => modal.classList.remove('show'));
+      document
+        .getElementById('cancelCreate')
+        .addEventListener('click', () => modal.classList.remove('show'));
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('show');
+      });
+
+      function showCreateAlert(msg, type = 'error') {
+        const el = document.getElementById('createAlert');
+        el.textContent = msg;
+        el.className = `alert alert-${type} show`;
+      }
+      function hideCreateAlert() {
+        document.getElementById('createAlert').className = 'alert';
+      }
+
+      // ——— Change password flow ———
+      const passwordModal = document.getElementById('passwordModal');
+      const passwordStepLogin = document.getElementById('passwordStepLogin');
+      const passwordStepOld = document.getElementById('passwordStepOld');
+      const passwordStepNew = document.getElementById('passwordStepNew');
+      const passwordLoginInput = document.getElementById('passwordLogin');
+      const passwordOldInput = document.getElementById('passwordOld');
+      const passwordNewInput = document.getElementById('passwordNew');
+      const passwordBackBtn = document.getElementById('passwordBackBtn');
+      const passwordCancelBtn = document.getElementById('passwordCancelBtn');
+      const passwordNextBtn = document.getElementById('passwordNextBtn');
+      const passwordNextText = document.getElementById('passwordNextText');
+      const passwordSpinner = document.getElementById('passwordSpinner');
+
+      const passwordState = {
+        step: 'login',
+        login: '',
+        oldPassword: '',
+      };
+
+      function setPasswordLoading(isLoading) {
+        passwordNextBtn.disabled = isLoading;
+        passwordBackBtn.disabled = isLoading;
+        passwordCancelBtn.disabled = isLoading;
+        passwordNextText.style.display = isLoading ? 'none' : '';
+        passwordSpinner.style.display = isLoading ? 'inline-block' : 'none';
+      }
+
+      function showPasswordAlert(msg, type = 'error') {
+        const el = document.getElementById('passwordAlert');
+        el.textContent = msg;
+        el.className = `alert alert-${type} show`;
+      }
+
+      function hidePasswordAlert() {
+        document.getElementById('passwordAlert').className = 'alert';
+      }
+
+      function setPasswordStep(step) {
+        passwordState.step = step;
+        passwordStepLogin.style.display = step === 'login' ? '' : 'none';
+        passwordStepOld.style.display = step === 'old' ? '' : 'none';
+        passwordStepNew.style.display = step === 'new' ? '' : 'none';
+        passwordBackBtn.style.display = step === 'login' ? 'none' : '';
+
+        if (step === 'login') {
+          passwordNextText.textContent = 'Проверить логин';
+          setTimeout(() => passwordLoginInput.focus(), 50);
+        } else if (step === 'old') {
+          passwordNextText.textContent = 'Проверить пароль';
+          setTimeout(() => passwordOldInput.focus(), 50);
+        } else {
+          passwordNextText.textContent = 'Сменить пароль';
+          setTimeout(() => passwordNewInput.focus(), 50);
+        }
+      }
+
+      function resetPasswordWizard() {
+        passwordState.step = 'login';
+        passwordState.login = '';
+        passwordState.oldPassword = '';
+        passwordLoginInput.value = '';
+        passwordOldInput.value = '';
+        passwordNewInput.value = '';
+        hidePasswordAlert();
+        setPasswordLoading(false);
+        setPasswordStep('login');
+      }
+
+      function closePasswordModal() {
+        passwordModal.classList.remove('show');
+        resetPasswordWizard();
+      }
+
+      function findAccountByLogin(login) {
+        const normalized = String(login || '')
+          .trim()
+          .toLowerCase();
+        if (!normalized) return null;
+        return (
+          cachedAccounts.find((acc) => String(acc?.login || '').toLowerCase() === normalized) ||
+          null
+        );
+      }
+
+      async function verifyAccountPassword(login, password) {
+        const res = await authFetch('/api/admin/accounts/verify-password', {
+          method: 'POST',
+          body: JSON.stringify({ login, password }),
+        });
+        if (!res) return { success: false, error: 'Сессия истекла' };
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          return { success: false, error: data.error || 'Не удалось проверить текущий пароль' };
+        }
+        return { success: true };
+      }
+
+      async function updateAccountPassword(login, oldPassword, newPassword) {
+        const res = await authFetch('/api/admin/accounts/change-password', {
+          method: 'POST',
+          body: JSON.stringify({ login, oldPassword, newPassword }),
+        });
+        if (!res) return { success: false, error: 'Сессия истекла' };
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          return { success: false, error: data.error || 'Не удалось сменить пароль' };
+        }
+        return { success: true };
+      }
+
+      document.getElementById('changePasswordBtn').addEventListener('click', () => {
+        resetPasswordWizard();
+        passwordModal.classList.add('show');
+      });
+
+      document.getElementById('closePasswordModal').addEventListener('click', closePasswordModal);
+      passwordCancelBtn.addEventListener('click', closePasswordModal);
+      passwordModal.addEventListener('click', (e) => {
+        if (e.target === passwordModal) closePasswordModal();
+      });
+
+      passwordBackBtn.addEventListener('click', () => {
+        hidePasswordAlert();
+        if (passwordState.step === 'new') {
+          setPasswordStep('old');
+          return;
+        }
+        setPasswordStep('login');
+      });
+
+      passwordNextBtn.addEventListener('click', async () => {
+        hidePasswordAlert();
+
+        if (passwordState.step === 'login') {
+          const loginValue = passwordLoginInput.value.trim();
+          if (!loginValue) {
+            showPasswordAlert('Укажите логин пользователя');
+            return;
+          }
+          const account = findAccountByLogin(loginValue);
+          if (!account) {
+            showPasswordAlert('Аккаунт с таким логином не найден');
+            return;
+          }
+          passwordState.login = account.login;
+          passwordOldInput.value = '';
+          setPasswordStep('old');
+          return;
+        }
+
+        if (passwordState.step === 'old') {
+          const oldPassword = passwordOldInput.value;
+          if (!oldPassword) {
+            showPasswordAlert('Введите текущий пароль');
+            return;
+          }
+
+          setPasswordLoading(true);
+          try {
+            const verifyResult = await verifyAccountPassword(passwordState.login, oldPassword);
+            if (!verifyResult.success) {
+              showPasswordAlert(verifyResult.error || 'Неверный текущий пароль');
+              return;
+            }
+            passwordState.oldPassword = oldPassword;
+            passwordNewInput.value = '';
+            setPasswordStep('new');
+          } finally {
+            setPasswordLoading(false);
+          }
+          return;
+        }
+
+        const newPassword = passwordNewInput.value;
+        if (newPassword.length < 6) {
+          showPasswordAlert('Новый пароль должен быть минимум 6 символов');
+          return;
+        }
+
+        setPasswordLoading(true);
+        try {
+          const updateResult = await updateAccountPassword(
+            passwordState.login,
+            passwordState.oldPassword,
+            newPassword
+          );
+          if (!updateResult.success) {
+            showPasswordAlert(updateResult.error || 'Ошибка смены пароля');
+            return;
+          }
+          showPasswordAlert(`Пароль для "${passwordState.login}" успешно обновлен`, 'success');
+          loadAccounts();
+          setTimeout(() => closePasswordModal(), 1100);
+        } finally {
+          setPasswordLoading(false);
+        }
+      });
+
+      document.getElementById('confirmCreate').addEventListener('click', async () => {
+        const login = document.getElementById('newLogin').value.trim();
+        const password = document.getElementById('newPassword').value;
+        hideCreateAlert();
+        if (!login || !password) return showCreateAlert('Заполните все поля');
+
+        const btn = document.getElementById('confirmCreate');
+        const spinner = document.getElementById('createSpinner');
+        const text = document.getElementById('createBtnText');
+        btn.disabled = true;
+        text.style.display = 'none';
+        spinner.style.display = 'inline-block';
+
+        try {
+          const res = await authFetch('/api/admin/accounts/create', {
+            method: 'POST',
+            body: JSON.stringify({ login, password }),
+          });
+          if (!res) return;
+          const data = await res.json();
+          if (data.success) {
+            showCreateAlert('Аккаунт создан успешно!', 'success');
+            setTimeout(() => {
+              modal.classList.remove('show');
+              loadAccounts();
+            }, 1200);
+          } else {
+            showCreateAlert(data.error || 'Ошибка создания');
+          }
+        } catch {
+          showCreateAlert('Ошибка соединения');
+        } finally {
+          btn.disabled = false;
+          text.style.display = '';
+          spinner.style.display = 'none';
+        }
+      });
+
+      loadAccounts();
+    </script>
+  </body>
+</html>

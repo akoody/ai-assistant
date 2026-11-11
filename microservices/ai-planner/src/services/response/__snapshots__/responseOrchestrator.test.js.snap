@@ -1,0 +1,95 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`response workflow characterization assistant identity 1`] = `
+{
+  "buttons": [
+    "Концерты",
+    "Театры",
+    "Выставки",
+    "Покажи все",
+  ],
+  "message": "Помогу подобрать мероприятие. Что вам интересно?",
+  "offer": null,
+}
+`;
+
+exports[`response workflow characterization declining further recommendations 1`] = `
+{
+  "buttons": [],
+  "message": "Хорошо. Если захотите вернуться к подбору мероприятий, я помогу.",
+  "offer": null,
+}
+`;
+
+exports[`response workflow characterization greeting 1`] = `
+{
+  "buttons": [
+    "Москва",
+    "Санкт-Петербург",
+    "Екатеринбург",
+    "Новосибирск",
+    "Казань",
+    "Нижний Новгород",
+    "Другой город",
+  ],
+  "message": "Здравствуйте. В каком городе будем искать мероприятия?",
+  "offer": null,
+}
+`;
+
+exports[`response workflow characterization health complaint 1`] = `
+{
+  "buttons": [
+    "Найти концерт",
+    "Найти театр",
+    "Найти выставку",
+    "Может, позже",
+  ],
+  "message": "Мне жаль, что вам сейчас очень плохо. Медицинскую или психологическую поддержку я не заменю, но могу бережно помочь с афишей: если хочется тихо переключиться, подберу что-то спокойное без давления.",
+  "offer": null,
+}
+`;
+
+exports[`response workflow characterization mood without a city 1`] = `
+{
+  "buttons": [
+    "Москва",
+    "Санкт-Петербург",
+    "Екатеринбург",
+    "Новосибирск",
+    "Казань",
+    "Нижний Новгород",
+    "Другой город",
+  ],
+  "message": "Подберу что-нибудь веселое. Для начала скажите, в каком городе ищем.",
+  "offer": null,
+}
+`;
+
+exports[`response workflow characterization search with empty catalog 1`] = `
+{
+  "buttons": [
+    "Уточнить дату",
+    "Уточнить категорию",
+    "Уточнить жанр",
+  ],
+  "message": "Подходящих концертов в городе Москве сейчас не нашлось. Могу сразу предложить другой формат досуга или поискать в другом городе. Давайте уточним параметры поиска.",
+  "offer": null,
+}
+`;
+
+exports[`response workflow characterization slash command 1`] = `
+{
+  "buttons": [
+    "Москва",
+    "Санкт-Петербург",
+    "Екатеринбург",
+    "Новосибирск",
+    "Казань",
+    "Нижний Новгород",
+    "Другой город",
+  ],
+  "message": "Помогу подобрать мероприятие. Что вам интересно?",
+  "offer": null,
+}
+`;

@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Виджет — Kassir Panel</title>
+    <link rel="stylesheet" href="/admin/admin.css" />
+  </head>
+
+  <body>
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🎫</div>
+          <div>
+            <div class="logo-text">Kassir</div>
+            <div class="logo-sub">Panel</div>
+          </div>
+        </div>
+        <nav class="sidebar-nav" id="sidebarNav"></nav>
+        <div class="sidebar-footer">
+          <div class="user-pill">
+            <div class="avatar" id="avatarInitial">W</div>
+            <div class="user-info">
+              <div class="user-name" id="sidebarLogin">—</div>
+              <div class="user-role" id="sidebarRole">—</div>
+            </div>
+            <button class="btn-logout" title="Выйти" id="logoutBtn">⏻</button>
+          </div>
+        </div>
+      </aside>
+
+      <div class="main-content">
+        <div class="topbar">
+          <div>
+            <h2>Виджет</h2>
+            <div class="topbar-sub">Тестирование виджета и определения города по домену</div>
+          </div>
+          <div class="topbar-actions">
+            <button class="btn btn-ghost" id="newUserBtn">Новый пользователь</button>
+            <button class="btn btn-primary" id="newChatBtn">Новый чат</button>
+          </div>
+        </div>
+
+        <div class="page-body widget-test-page">
+          <div class="card widget-test-card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Город для теста</div>
+                <div class="card-sub" id="cityCurrent">Загрузка...</div>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="/admin/widget.html">Сбросить</a>
+            </div>
+            <ul class="city-grid-panel" id="cityLinks"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { getToken, getUser, clearAuth } from '/admin/auth.js';
+
+      const CITY_SUBDOMAIN_MAP = Object.freeze({
+        msk: 'Москва',
+        spb: 'Санкт-Петербург',
+        anapa: 'Анапа',
+        arh: 'Архангельск',
+        astr: 'Астрахань',
+        brn: 'Барнаул',
+        belgorod: 'Белгород',
+        blag: 'Благовещенск',
+        bryansk: 'Брянск',
+        nov: 'Великий Новгород',
+        vl: 'Владивосток',
+        vlm: 'Владимир',
+        vlg: 'Волгоград',
+        vologda: 'Вологда',
+        vrn: 'Воронеж',
+        gel: 'Геленджик',
+        ekb: 'Екатеринбург',
+        ivanovo: 'Иваново',
+        izhevsk: 'Ижевск',
+        irk: 'Иркутск',
+        yola: 'Йошкар-Ола',
+        kzn: 'Казань',
+        kgd: 'Калининград',
+        klg: 'Калуга',
+        kemerovo: 'Кемерово',
+        kirov: 'Киров',
+        krd: 'Краснодар',
+        krs: 'Красноярск',
+        krym: 'Крым',
+        kurgan: 'Курган',
+        kursk: 'Курск',
+        lzr: 'Лазаревское',
+        lipetsk: 'Липецк',
+        mgn: 'Магнитогорск',
+        mkala: 'Махачкала',
+        murm: 'Мурманск',
+        nabchelny: 'Набережные Челны',
+        nn: 'Нижний Новгород',
+        novokuznetsk: 'Новокузнецк',
+        nvrsk: 'Новороссийск',
+        nsk: 'Новосибирск',
+        omsk: 'Омск',
+        orel: 'Орёл',
+        orenburg: 'Оренбург',
+        orsk: 'Орск',
+        pnz: 'Пенза',
+        perm: 'Пермь',
+        ptz: 'Петрозаводск',
+        kam: 'Петропавловск-Камчатский',
+        pskov: 'Псков',
+        rnd: 'Ростов-на-Дону',
+        rzn: 'Рязань',
+        smr: 'Самара',
+        saransk: 'Саранск',
+        saratov: 'Саратов',
+        smolensk: 'Смоленск',
+        sochi: 'Сочи',
+        sk: 'Ставрополь',
+        sur: 'Сургут',
+        syktyvkar: 'Сыктывкар',
+        tambov: 'Тамбов',
+        tver: 'Тверь',
+        tlt: 'Тольятти',
+        tomsk: 'Томск',
+        tula: 'Тула',
+        tmn: 'Тюмень',
+        ulan: 'Улан-Удэ',
+        ulyanovsk: 'Ульяновск',
+        ufa: 'Уфа',
+        hbr: 'Хабаровск',
+        chaik: 'Чайковский',
+        cheboksary: 'Чебоксары',
+        chel: 'Челябинск',
+        cher: 'Череповец',
+        chita: 'Чита',
+        elista: 'Элиста',
+        sakh: 'Южно-Сахалинск',
+        yar: 'Ярославль',
+      });
+
+      const authState = await resolveAuthState();
+      if (!authState) {
+        window.location.href = '/admin/';
+      } else {
+        setupPage(authState);
+      }
+
+      async function resolveAuthState() {
+        const adminToken = getToken();
+        if (adminToken) {
+          const res = await fetch('/api/admin/verify', {
+            headers: { Authorization: `Bearer ${adminToken}` },
+          });
+          if (res?.ok) {
+            const data = await res.json().catch(() => ({}));
+            if (data.success) {
+              return { source: 'admin', user: getUser() || data.user };
+            }
+          }
+          clearAuth();
+        }
+
+        return null;
+      }
+
+      function setupPage(state) {
+        const login = state.user?.login || 'widget';
+        const role = state.user?.role || 'widget';
+
+        document.getElementById('sidebarLogin').textContent = login;
+        document.getElementById('avatarInitial').textContent = login[0]?.toUpperCase() || 'W';
+        document.getElementById('sidebarRole').textContent =
+          role === 'admin' ? 'Администратор' : role === 'viewer' ? 'Viewer' : 'Widget';
+
+        renderNavigation(state);
+        setupLogout(state);
+        setupCityLinks();
+        loadWidget();
+        setupWidgetButtons();
+      }
+
+      function renderNavigation(state) {
+        const user = state.user || {};
+        const nav = document.getElementById('sidebarNav');
+        nav.innerHTML = `
+  ${user.role === 'admin' ? `<a class="nav-link" href="/admin/dashboard.html"><span class="nav-icon">👥</span> Аккаунты</a>` : ''}
+  <a class="nav-link" href="/admin/metrics.html"><span class="nav-icon">📊</span> Метрики</a>
+  <a class="nav-link active" href="/admin/widget.html"><span class="nav-icon">💬</span> Виджет</a>
+`;
+      }
+
+      function setupLogout(state) {
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+          clearAuth();
+          window.location.href = '/admin/';
+        });
+      }
+
+      function getSelectedEmbeddingHost() {
+        const params = new URL(window.location.href).searchParams;
+        const queryHost = String(params.get('cityHost') || '')
+          .trim()
+          .toLowerCase();
+        if (queryHost) return queryHost;
+
+        const currentHost = String(window.location.hostname || '')
+          .trim()
+          .toLowerCase();
+        if (currentHost === 'localhost' || currentHost === '127.0.0.1' || currentHost === '::1') {
+          return 'sferaai.ru';
+        }
+        return currentHost || 'sferaai.ru';
+      }
+
+      function inferCityFromHost(host) {
+        const normalizedHost = String(host || '')
+          .trim()
+          .toLowerCase()
+          .replace(/\.+$/, '');
+        const baseDomain =
+          normalizedHost.endsWith('.sferaai.ru') || normalizedHost === 'sferaai.ru'
+            ? 'sferaai.ru'
+            : 'sferaai.ru';
+
+        if (
+          normalizedHost.endsWith(`.${baseDomain}`) &&
+          normalizedHost !== baseDomain &&
+          normalizedHost !== `www.${baseDomain}`
+        ) {
+          const sub = normalizedHost.slice(0, -`.${baseDomain}`.length);
+          const labels = sub.split('.').filter(Boolean);
+          for (let i = labels.length - 1; i >= 0; i -= 1) {
+            const code = labels[i];
+            if (CITY_SUBDOMAIN_MAP[code]) {
+              return { code, name: CITY_SUBDOMAIN_MAP[code], baseDomain };
+            }
+          }
+        }
+
+        return { code: null, name: null, baseDomain };
+      }
+
+      function setupCityLinks() {
+        const selectedHost = getSelectedEmbeddingHost();
+        const inferred = inferCityFromHost(selectedHost);
+        const cityCurrent = document.getElementById('cityCurrent');
+        const cityLinks = document.getElementById('cityLinks');
+
+        cityCurrent.textContent = inferred.name
+          ? `Сейчас виджет получает домен ${selectedHost} и город ${inferred.name}`
+          : `Сейчас виджет получает домен ${selectedHost}. Город по домену не выбран.`;
+
+        const entries = Object.entries(CITY_SUBDOMAIN_MAP).sort((a, b) =>
+          a[1].localeCompare(b[1], 'ru')
+        );
+        cityLinks.innerHTML = entries
+          .map(([code, name]) => {
+            const host = `${code}.${inferred.baseDomain}`;
+            const isActive = selectedHost === host;
+            return `
+                    <li>
+                        <a class="${isActive ? 'active' : ''}" href="/admin/widget.html?cityHost=${encodeURIComponent(host)}">
+                            ${escapeHtml(name)}
+                        </a>
+                    </li>`;
+          })
+          .join('');
+      }
+
+      function loadWidget() {
+        const script = document.createElement('script');
+        script.src = '/embed.js';
+        script.async = true;
+        script.dataset.apiUrl = '';
+        script.dataset.embeddingHost = getSelectedEmbeddingHost();
+        document.body.appendChild(script);
+      }
+
+      function setupWidgetButtons() {
+        document.getElementById('newUserBtn').addEventListener('click', () => {
+          if (window.KassirWidgetAPI) {
+            window.KassirWidgetAPI.createNewUser();
+          }
+        });
+
+        document.getElementById('newChatBtn').addEventListener('click', () => {
+          if (window.KassirWidgetAPI) {
+            window.KassirWidgetAPI.startNewChat();
+            setTimeout(() => window.KassirWidgetAPI.show(), 100);
+          }
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+    </script>
+  </body>
+</html>

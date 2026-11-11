@@ -1,0 +1,45 @@
+{
+  "name": "ai-planner",
+  "version": "1.0.0",
+  "description": "AI Planner микросервис для планирования диалогов и предложений",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "db:init": "node scripts/init-db.js",
+    "db:update": "FORCE_UPDATE=true node scripts/init-db.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongodb": "^4.17.1",
+    "node-cache": "^5.1.2",
+    "undici": "^7.16.0",
+    "iconv-lite": "^0.6.3"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "@jest/globals": "^29.7.0"
+  },
+  "jest": {
+    "transform": {},
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "setupFiles": [
+      "<rootDir>/../../shared/testing/disableNetwork.js"
+    ]
+  },
+  "keywords": [
+    "ai",
+    "planner",
+    "chat",
+    "microservice"
+  ],
+  "author": "",
+  "license": "ISC"
+}

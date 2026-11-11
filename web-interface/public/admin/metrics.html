@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Метрики — Kassir Panel</title>
+    <link rel="stylesheet" href="/admin/admin.css" />
+  </head>
+
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🎫</div>
+          <div>
+            <div class="logo-text">Kassir</div>
+            <div class="logo-sub">Panel</div>
+          </div>
+        </div>
+        <nav class="sidebar-nav" id="sidebarNav"></nav>
+        <div class="sidebar-actions">
+          <button class="btn btn-ghost btn-sidebar-action" id="selfChangePasswordBtn">
+            🔐 Сменить пароль
+          </button>
+        </div>
+        <div class="sidebar-footer">
+          <div class="user-pill">
+            <div class="avatar" id="avatarInitial">A</div>
+            <div class="user-info">
+              <div class="user-name" id="sidebarLogin">—</div>
+              <div class="user-role" id="sidebarRole">—</div>
+            </div>
+            <button class="btn-logout" title="Выйти" id="logoutBtn">⏻</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <div class="main-content">
+        <div class="topbar">
+          <div>
+            <h2>Метрики виджета</h2>
+            <div class="topbar-sub">Аналитика действий пользователей в реальном времени</div>
+          </div>
+          <div class="topbar-actions">
+            <div class="export-controls">
+              <label class="export-label" for="exportFormat">Экспорт</label>
+              <select id="exportFormat">
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+              </select>
+              <button class="btn btn-ghost" id="exportBtn">⤓ Скачать</button>
+            </div>
+            <button class="btn btn-ghost" id="refreshBtn">🔄 Обновить</button>
+          </div>
+        </div>
+        <div class="page-body">
+          <!-- Stats summary -->
+          <div class="stat-grid" id="statGrid">
+            <div class="stat-card">
+              <div class="stat-icon">📂</div>
+              <div class="stat-val" id="s-opens">—</div>
+              <div class="stat-label">Открытий виджета</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">💬</div>
+              <div class="stat-val" id="s-msgs">—</div>
+              <div class="stat-label">Сообщений</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">🎫</div>
+              <div class="stat-val" id="s-events">—</div>
+              <div class="stat-label">Выдач событий</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">🔗</div>
+              <div class="stat-val" id="s-clicks">—</div>
+              <div class="stat-label">Кликов по событиям</div>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="filters">
+            <div class="filter-group">
+              <label>С даты</label>
+              <input type="date" id="filterFrom" />
+            </div>
+            <div class="filter-group">
+              <label>По дату</label>
+              <input type="date" id="filterTo" />
+            </div>
+            <div class="filter-group">
+              <label>User ID</label>
+              <input type="text" id="filterUserId" placeholder="Например: user-123..." />
+            </div>
+            <div class="filter-group">
+              <label>Домен</label>
+              <select id="filterDomain">
+                <option value="">Все домены</option>
+                <option value="kassir.ru">kassir.ru</option>
+                <option value="sferaai.ru">sferaai.ru</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="applyFilter">Применить</button>
+            <button class="btn btn-ghost" id="resetFilter">Сбросить</button>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Воронка конверсии</div>
+                <div class="card-sub">
+                  Путь пользователя: открытие → сообщение → выдача → клик по событию
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="refreshFunnelBtn">Обновить воронку</button>
+            </div>
+            <div id="funnelContainer">
+              <div class="empty-state">
+                <div class="spinner"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Карточка пользователя</div>
+                <div class="card-sub">
+                  Единый профиль по userId: сессии, сообщения, выдачи и клики
+                </div>
+              </div>
+            </div>
+            <div class="user-card-search">
+              <div class="filter-group">
+                <label>User ID</label>
+                <input
+                  type="text"
+                  id="userCardUserId"
+                  placeholder="Например: user-1771966698914-nz08y6cy2"
+                />
+              </div>
+              <button class="btn btn-primary" id="loadUserCardBtn">Открыть карточку</button>
+              <button class="btn btn-ghost" id="clearUserCardBtn">Очистить</button>
+            </div>
+            <div id="userCardContainer">
+              <div class="empty-state">
+                <div class="empty-icon">👤</div>
+                <p>Введите User ID, чтобы открыть карточку пользователя</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Удаление статистики пользователя</div>
+                <div class="card-sub">
+                  Очистка аналитики по userId (доступно только администратору)
+                </div>
+              </div>
+            </div>
+            <div class="user-card-search">
+              <div class="filter-group">
+                <label>User ID</label>
+                <input
+                  type="text"
+                  id="deleteStatsUserId"
+                  placeholder="Например: user-1771966698914-nz08y6cy2"
+                />
+              </div>
+              <div class="filter-group">
+                <label>Что удалить</label>
+                <select id="deleteStatsDataset">
+                  <option value="all">Полностью</option>
+                  <option value="opens">Открытия</option>
+                  <option value="messages">Сообщения</option>
+                  <option value="events">Выдачи</option>
+                  <option value="clicks">Клики</option>
+                </select>
+              </div>
+              <button class="btn btn-danger" id="deleteStatsBtn">Удалить статистику</button>
+            </div>
+            <div id="deleteStatsResult"></div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="tabs">
+            <button class="tab-btn active" data-tab="opens">📂 Открытия</button>
+            <button class="tab-btn" data-tab="messages">💬 Сообщения</button>
+            <button class="tab-btn" data-tab="events">🎫 Выдачи событий</button>
+            <button class="tab-btn" data-tab="clicks">🔗 Клики</button>
+          </div>
+
+          <!-- Tab: Widget opens -->
+          <div class="tab-panel active" id="tab-opens">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Открытия виджета</div>
+                  <div class="card-sub">Когда и кто открывал виджет</div>
+                </div>
+              </div>
+              <div id="opensContainer">
+                <div class="empty-state">
+                  <div class="spinner"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Messages -->
+          <div class="tab-panel" id="tab-messages">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Сообщения пользователей</div>
+                  <div class="card-sub">Что пользователи спрашивали в чате виджета</div>
+                </div>
+              </div>
+              <div class="section-toolbar">
+                <div class="section-toolbar-note">
+                  Выгрузка использует текущие фильтры сверху: период, User ID и домен. Для kassir.ru
+                  просто выберите этот домен и нажмите «Применить».
+                </div>
+                <button class="btn btn-ghost btn-sm" id="exportMessagesBtn">
+                  ⤓ Скачать CSV сообщений
+                </button>
+              </div>
+              <div id="messagesContainer">
+                <div class="empty-state">
+                  <div class="spinner"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Events -->
+          <div class="tab-panel" id="tab-events">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Выдачи событий пользователям</div>
+                  <div class="card-sub">Какие события показывались и сколько</div>
+                </div>
+              </div>
+              <div id="eventsContainer">
+                <div class="empty-state">
+                  <div class="spinner"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Clicks -->
+          <div class="tab-panel" id="tab-clicks">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Переходы по событиям</div>
+                  <div class="card-sub">Клики пользователей по ссылкам событий</div>
+                </div>
+              </div>
+              <div id="clicksContainer">
+                <div class="empty-state">
+                  <div class="spinner"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="selfPasswordModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">Смена пароля</div>
+          <button class="modal-close" id="closeSelfPasswordModal">✕</button>
+        </div>
+        <div class="form-group">
+          <label for="selfOldPassword">Текущий пароль</label>
+          <input type="password" id="selfOldPassword" placeholder="Введите текущий пароль" />
+        </div>
+        <div class="form-group">
+          <label for="selfNewPassword">Новый пароль</label>
+          <input type="password" id="selfNewPassword" placeholder="Минимум 6 символов" />
+        </div>
+        <div class="form-group">
+          <label for="selfNewPasswordRepeat">Повторите новый пароль</label>
+          <input type="password" id="selfNewPasswordRepeat" placeholder="Повторите новый пароль" />
+        </div>
+        <div id="selfPasswordAlert" class="alert"></div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="cancelSelfPasswordBtn">Отмена</button>
+          <button class="btn btn-primary" id="confirmSelfPasswordBtn">
+            <span id="selfPasswordBtnText">Сменить пароль</span>
+            <span id="selfPasswordSpinner" class="spinner" style="display: none"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { requireAuth, getUser, logout, authFetch } from '/admin/auth.js';
+
+      if (!requireAuth()) {
+        /* redirect */
+      }
+      const user = getUser();
+
+      // Sidebar setup
+      document.getElementById('sidebarLogin').textContent = user?.login || '—';
+      document.getElementById('avatarInitial').textContent = (user?.login || 'A')[0].toUpperCase();
+      document.getElementById('sidebarRole').textContent =
+        user?.role === 'admin' ? 'Администратор' : 'Viewer';
+      document.getElementById('logoutBtn').addEventListener('click', logout);
+
+      const nav = document.getElementById('sidebarNav');
+      nav.innerHTML = `
+  ${user?.role === 'admin' ? `<a class="nav-link" href="/admin/dashboard.html"><span class="nav-icon">👥</span> Аккаунты</a>` : ''}
+  <a class="nav-link active" href="/admin/metrics.html"><span class="nav-icon">📊</span> Метрики</a>
+  <a class="nav-link" href="/admin/widget.html"><span class="nav-icon">💬</span> Виджет</a>
+`;
+
+      // ——— Self password change ———
+      const selfPasswordModal = document.getElementById('selfPasswordModal');
+      const selfOldPasswordInput = document.getElementById('selfOldPassword');
+      const selfNewPasswordInput = document.getElementById('selfNewPassword');
+      const selfNewPasswordRepeatInput = document.getElementById('selfNewPasswordRepeat');
+      const selfPasswordBtnText = document.getElementById('selfPasswordBtnText');
+      const selfPasswordSpinner = document.getElementById('selfPasswordSpinner');
+      const confirmSelfPasswordBtn = document.getElementById('confirmSelfPasswordBtn');
+      const cancelSelfPasswordBtn = document.getElementById('cancelSelfPasswordBtn');
+      const selfChangePasswordBtn = document.getElementById('selfChangePasswordBtn');
+
+      function showSelfPasswordAlert(msg, type = 'error') {
+        const el = document.getElementById('selfPasswordAlert');
+        el.textContent = msg;
+        el.className = `alert alert-${type} show`;
+      }
+
+      function hideSelfPasswordAlert() {
+        document.getElementById('selfPasswordAlert').className = 'alert';
+      }
+
+      function setSelfPasswordLoading(isLoading) {
+        confirmSelfPasswordBtn.disabled = isLoading;
+        cancelSelfPasswordBtn.disabled = isLoading;
+        selfPasswordBtnText.style.display = isLoading ? 'none' : '';
+        selfPasswordSpinner.style.display = isLoading ? 'inline-block' : 'none';
+      }
+
+      function resetSelfPasswordForm() {
+        selfOldPasswordInput.value = '';
+        selfNewPasswordInput.value = '';
+        selfNewPasswordRepeatInput.value = '';
+        hideSelfPasswordAlert();
+        setSelfPasswordLoading(false);
+      }
+
+      function closeSelfPasswordModal() {
+        selfPasswordModal.classList.remove('show');
+        resetSelfPasswordForm();
+      }
+
+      selfChangePasswordBtn.addEventListener('click', () => {
+        resetSelfPasswordForm();
+        selfPasswordModal.classList.add('show');
+        setTimeout(() => selfOldPasswordInput.focus(), 50);
+      });
+
+      document
+        .getElementById('closeSelfPasswordModal')
+        .addEventListener('click', closeSelfPasswordModal);
+      cancelSelfPasswordBtn.addEventListener('click', closeSelfPasswordModal);
+      selfPasswordModal.addEventListener('click', (e) => {
+        if (e.target === selfPasswordModal) closeSelfPasswordModal();
+      });
+
+      confirmSelfPasswordBtn.addEventListener('click', async () => {
+        hideSelfPasswordAlert();
+        const oldPassword = selfOldPasswordInput.value;
+        const newPassword = selfNewPasswordInput.value;
+        const newPasswordRepeat = selfNewPasswordRepeatInput.value;
+
+        if (!oldPassword || !newPassword || !newPasswordRepeat) {
+          showSelfPasswordAlert('Заполните все поля');
+          return;
+        }
+        if (newPassword.length < 6) {
+          showSelfPasswordAlert('Новый пароль должен быть минимум 6 символов');
+          return;
+        }
+        if (newPassword !== newPasswordRepeat) {
+          showSelfPasswordAlert('Новый пароль и подтверждение не совпадают');
+          return;
+        }
+
+        setSelfPasswordLoading(true);
+        try {
+          const res = await authFetch('/api/admin/accounts/change-password', {
+            method: 'POST',
+            body: JSON.stringify({
+              login: user?.login || '',
+              oldPassword,
+              newPassword,
+            }),
+          });
+          if (!res) return;
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.success) {
+            showSelfPasswordAlert(data.error || 'Не удалось сменить пароль');
+            return;
+          }
+
+          showSelfPasswordAlert('Пароль успешно обновлён', 'success');
+          setTimeout(() => closeSelfPasswordModal(), 1000);
+        } finally {
+          setSelfPasswordLoading(false);
+        }
+      });
+
+      // ——— Tabs ———
+      document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+          document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+        });
+      });
+
+      // ——— Filters ———
+      let activeUserCardUserId = '';
+
+      document.getElementById('applyFilter').addEventListener('click', loadAll);
+      document.getElementById('resetFilter').addEventListener('click', () => {
+        document.getElementById('filterFrom').value = '';
+        document.getElementById('filterTo').value = '';
+        document.getElementById('filterUserId').value = '';
+        document.getElementById('filterDomain').value = '';
+        loadAll();
+      });
+      document.getElementById('refreshBtn').addEventListener('click', loadAll);
+      document.getElementById('exportBtn').addEventListener('click', exportAllStats);
+      document.getElementById('exportMessagesBtn').addEventListener('click', exportMessagesCsv);
+      document.getElementById('refreshFunnelBtn').addEventListener('click', loadFunnel);
+      document.getElementById('loadUserCardBtn').addEventListener('click', () => {
+        const raw = document.getElementById('userCardUserId').value.trim();
+        loadUserCard(raw);
+      });
+      document.getElementById('clearUserCardBtn').addEventListener('click', clearUserCard);
+      document.getElementById('deleteStatsBtn').addEventListener('click', deleteUserAnalytics);
+      document.getElementById('userCardUserId').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          const raw = document.getElementById('userCardUserId').value.trim();
+          loadUserCard(raw);
+        }
+      });
+      document.getElementById('deleteStatsUserId').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          deleteUserAnalytics();
+        }
+      });
+
+      function getFilters(options = {}) {
+        const includeLimit = options.includeLimit !== false;
+        const includeUserId = options.includeUserId !== false;
+        const from = document.getElementById('filterFrom').value;
+        const to = document.getElementById('filterTo').value;
+        const userId = document.getElementById('filterUserId').value.trim();
+        const domain = document.getElementById('filterDomain').value.trim();
+        const params = new URLSearchParams();
+        const startOfDayIso = toBoundaryIso(from, false);
+        const endOfDayIso = toBoundaryIso(to, true);
+        if (startOfDayIso) params.set('from', startOfDayIso);
+        if (endOfDayIso) params.set('to', endOfDayIso);
+        if (includeUserId && userId) params.set('userId', userId);
+        if (domain) params.set('domain', domain);
+        if (includeLimit) {
+          params.set('limit', '5000');
+        }
+        return params.toString();
+      }
+
+      async function loadDomainFilterOptions() {
+        const select = document.getElementById('filterDomain');
+        if (!select) return;
+
+        try {
+          const res = await authFetch('/api/admin/analytics/domains');
+          if (!res) return;
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.success || !Array.isArray(data.domains)) {
+            return;
+          }
+
+          const baseOptions = [
+            { value: '', label: 'Все домены' },
+            { value: 'kassir.ru', label: 'kassir.ru' },
+            { value: 'sferaai.ru', label: 'sferaai.ru' },
+          ];
+          const seen = new Set(baseOptions.map((item) => item.value));
+          const dynamic = data.domains
+            .map((item) =>
+              String(item || '')
+                .trim()
+                .toLowerCase()
+            )
+            .filter(Boolean)
+            .filter((item) => !seen.has(item))
+            .sort((a, b) => a.localeCompare(b));
+
+          const options = [
+            ...baseOptions,
+            ...dynamic.map((domain) => ({ value: domain, label: domain })),
+          ];
+          select.innerHTML = options
+            .map((item) => `<option value="${esc(item.value)}">${esc(item.label)}</option>`)
+            .join('');
+        } catch (_error) {
+          // keep default options
+        }
+      }
+
+      function toBoundaryIso(rawDate, isEnd) {
+        const value = String(rawDate || '').trim();
+        if (!value) return '';
+        const parts = value.split('-').map(Number);
+        if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) {
+          return '';
+        }
+        const [year, month, day] = parts;
+        const date = new Date(
+          year,
+          month - 1,
+          day,
+          isEnd ? 23 : 0,
+          isEnd ? 59 : 0,
+          isEnd ? 59 : 0,
+          isEnd ? 999 : 0
+        );
+        return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+      }
+
+      // ——— Utils ———
+      function esc(s) {
+        return String(s || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+      function fmtDate(d) {
+        if (!d) return '—';
+        const date = new Date(d);
+        if (Number.isNaN(date.getTime())) return '—';
+        try {
+          return date.toLocaleString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            fractionalSecondDigits: 3,
+          });
+        } catch {
+          return date.toLocaleString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          });
+        }
+      }
+      function emptyHtml(msg = 'Нет данных') {
+        return `<div class="empty-state"><div class="empty-icon">📭</div><p>${msg}</p></div>`;
+      }
+      function loading() {
+        return `<div class="empty-state"><div class="spinner"></div></div>`;
+      }
+
+      function getFilenameFromContentDisposition(disposition) {
+        const value = String(disposition || '');
+        if (!value) return null;
+        const utf8Match = value.match(/filename\*=UTF-8''([^;]+)/i);
+        if (utf8Match && utf8Match[1]) {
+          try {
+            return decodeURIComponent(utf8Match[1]);
+          } catch {
+            return utf8Match[1];
+          }
+        }
+        const plainMatch = value.match(/filename="?([^\";]+)"?/i);
+        if (plainMatch && plainMatch[1]) return plainMatch[1];
+        return null;
+      }
+
+      async function exportAllStats() {
+        const exportBtn = document.getElementById('exportBtn');
+        const format = document.getElementById('exportFormat').value || 'json';
+        const previousText = exportBtn.textContent;
+        exportBtn.disabled = true;
+        exportBtn.textContent = 'Экспорт...';
+
+        try {
+          const q = getFilters({ includeLimit: false });
+          const separator = q ? '&' : '';
+          const res = await authFetch(
+            `/api/admin/analytics/export?${q}${separator}format=${encodeURIComponent(format)}`
+          );
+          if (!res) return;
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP ${res.status}`);
+          }
+
+          const blob = await res.blob();
+          const contentDisposition = res.headers.get('content-disposition');
+          const fallbackName = `analytics-export.${format === 'csv' ? 'csv' : 'json'}`;
+          const fileName = getFilenameFromContentDisposition(contentDisposition) || fallbackName;
+
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } catch (error) {
+          alert(`Ошибка экспорта: ${error.message || 'Неизвестная ошибка'}`);
+        } finally {
+          exportBtn.disabled = false;
+          exportBtn.textContent = previousText;
+        }
+      }
+
+      async function exportMessagesCsv() {
+        const exportBtn = document.getElementById('exportMessagesBtn');
+        const previousText = exportBtn.textContent;
+        exportBtn.disabled = true;
+        exportBtn.textContent = 'Экспорт...';
+
+        try {
+          const q = getFilters({ includeLimit: false });
+          const res = await authFetch(`/api/admin/analytics/messages/export?${q}`);
+          if (!res) return;
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP ${res.status}`);
+          }
+
+          const blob = await res.blob();
+          const contentDisposition = res.headers.get('content-disposition');
+          const fileName =
+            getFilenameFromContentDisposition(contentDisposition) || 'widget-messages.csv';
+
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } catch (error) {
+          alert(`Ошибка экспорта сообщений: ${error.message || 'Неизвестная ошибка'}`);
+        } finally {
+          exportBtn.disabled = false;
+          exportBtn.textContent = previousText;
+        }
+      }
+
+      function renderFunnel(data) {
+        const container = document.getElementById('funnelContainer');
+        const steps = Array.isArray(data?.steps) ? data.steps : [];
+        if (!steps.length) {
+          container.innerHTML = emptyHtml('Нет данных по воронке');
+          return;
+        }
+
+        const maxUsers = Math.max(...steps.map((step) => Number(step.uniqueUsers || 0)), 1);
+        const rows = steps
+          .map((step, index) => {
+            const users = Number(step.uniqueUsers || 0);
+            const sessions = Number(step.uniqueSessions || 0);
+            const prevConv = index === 0 ? 100 : Number(step.conversionFromPrevUsers || 0);
+            const width = Math.max(6, Math.round((users / maxUsers) * 100));
+            return `
+      <div class="funnel-row">
+        <div class="funnel-left">
+          <div class="funnel-step-name">${index + 1}. ${esc(step.label || step.key || 'Шаг')}</div>
+          <div class="funnel-step-sub">${users} пользователей • ${sessions} сессий • ${prevConv}% от предыдущего шага</div>
+        </div>
+        <div class="funnel-bar-wrap">
+          <div class="funnel-bar" style="width:${width}%"></div>
+        </div>
+      </div>`;
+          })
+          .join('');
+
+        const totals = data?.totals || {};
+        container.innerHTML = `
+    <div class="funnel-summary">
+      <div class="funnel-summary-item"><strong>${esc(String(totals.usersAtStart ?? 0))}</strong> пользователей на старте</div>
+      <div class="funnel-summary-item"><strong>${esc(String(totals.usersAtEnd ?? 0))}</strong> дошли до клика</div>
+      <div class="funnel-summary-item"><strong>${esc(String(totals.overallUsersConversion ?? 0))}%</strong> общая конверсия</div>
+    </div>
+    <div class="funnel-list">${rows}</div>`;
+      }
+
+      async function loadFunnel() {
+        const container = document.getElementById('funnelContainer');
+        container.innerHTML = loading();
+        const q = getFilters({ includeLimit: false });
+        const res = await authFetch(`/api/admin/analytics/funnel?${q}`);
+        if (!res) return;
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          container.innerHTML = emptyHtml(data.error || 'Ошибка загрузки воронки');
+          return;
+        }
+        renderFunnel(data);
+      }
+
+      function renderUserCard(data) {
+        const container = document.getElementById('userCardContainer');
+        if (!data || !data.success) {
+          container.innerHTML = emptyHtml('Нет данных по пользователю');
+          return;
+        }
+
+        const summary = data.summary || {};
+        const sessions = Array.isArray(data.sessions) ? data.sessions : [];
+        const details = data.details || {};
+        const timeline = Array.isArray(data.timeline) ? data.timeline : [];
+
+        const summaryHtml = `
+    <div class="user-card-summary">
+      <div class="user-summary-pill"><span>Открытия</span><strong>${esc(String(summary.opens ?? 0))}</strong></div>
+      <div class="user-summary-pill"><span>Сообщения</span><strong>${esc(String(summary.messages ?? 0))}</strong></div>
+      <div class="user-summary-pill"><span>Выдачи</span><strong>${esc(String(summary.eventsShown ?? 0))}</strong></div>
+      <div class="user-summary-pill"><span>Клики</span><strong>${esc(String(summary.eventClicks ?? 0))}</strong></div>
+      <div class="user-summary-pill"><span>Сессии</span><strong>${esc(String(summary.sessions ?? 0))}</strong></div>
+    </div>`;
+
+        const sessionsRows = sessions.slice(0, 20).map(
+          (s) => `<tr>
+      <td class="td-mono">${esc(s.sessionId || '—')}</td>
+      <td class="td-mono">${fmtDate(s.firstSeen)}</td>
+      <td class="td-mono">${fmtDate(s.lastSeen)}</td>
+      <td style="text-align:center"><strong>${esc(String(s.totalEvents || 0))}</strong></td>
+      <td style="text-align:center">${esc(String(s.messages || 0))}</td>
+      <td style="text-align:center">${esc(String(s.eventsShown || 0))}</td>
+      <td style="text-align:center">${esc(String(s.eventClicks || 0))}</td>
+    </tr>`
+        );
+
+        const timelineRows = timeline.slice(0, 25).map(
+          (t) => `<tr>
+      <td class="td-mono">${fmtDate(t.timestamp)}</td>
+      <td>${esc(t.type || '—')}</td>
+      <td class="td-mono">${esc(t.sessionId || '—')}</td>
+      <td class="td-text">${esc(t.description || '—')}</td>
+    </tr>`
+        );
+
+        const messageRows = (Array.isArray(details.messages) ? details.messages : [])
+          .slice(0, 10)
+          .map(
+            (m) => `<tr>
+      <td class="td-mono">${fmtDate(m.timestamp)}</td>
+      <td class="td-text">${esc(m.text || '—')}</td>
+    </tr>`
+          );
+
+        const eventRows = (Array.isArray(details.events) ? details.events : []).slice(0, 10).map(
+          (e) => `<tr>
+      <td class="td-mono">${fmtDate(e.timestamp)}</td>
+      <td style="text-align:center"><strong>${esc(String(e.count || 0))}</strong></td>
+      <td class="td-text">${esc((e.eventNames || []).join(', ') || '—')}</td>
+    </tr>`
+        );
+
+        const clickRows = (Array.isArray(details.clicks) ? details.clicks : []).slice(0, 10).map(
+          (c) => `<tr>
+      <td class="td-mono">${fmtDate(c.timestamp)}</td>
+      <td>${esc(c.eventName || '—')}</td>
+      <td><a href="${esc(c.url || '#')}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-size:13px">${esc(c.url || '—')}</a></td>
+    </tr>`
+        );
+
+        container.innerHTML = `
+    <div class="user-card-title">User: <span class="td-mono">${esc(data.userId || '—')}</span></div>
+    ${summaryHtml}
+    <div class="card" style="margin-top:14px">
+      <div class="card-header"><div><div class="card-title">Сессии</div></div></div>
+      ${renderTable(['Session ID', 'Первая активность', 'Последняя активность', 'Всего', 'Сообщения', 'Выдачи', 'Клики'], sessionsRows)}
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-header"><div><div class="card-title">Лента активности</div></div></div>
+      ${renderTable(['Время', 'Тип', 'Session', 'Описание'], timelineRows)}
+    </div>
+    <div class="user-card-grid">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Последние сообщения</div></div>
+        ${renderTable(['Время', 'Текст'], messageRows)}
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Последние выдачи</div></div>
+        ${renderTable(['Время', 'Кол-во', 'События'], eventRows)}
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Последние клики</div></div>
+        ${renderTable(['Время', 'Событие', 'URL'], clickRows)}
+      </div>
+    </div>`;
+      }
+
+      async function loadUserCard(userId, options = {}) {
+        const normalizedUserId = String(userId || '').trim();
+        const container = document.getElementById('userCardContainer');
+        if (!normalizedUserId) {
+          if (!options.silent) {
+            container.innerHTML = emptyHtml('Введите User ID, чтобы открыть карточку пользователя');
+          }
+          activeUserCardUserId = '';
+          return;
+        }
+
+        activeUserCardUserId = normalizedUserId;
+        document.getElementById('userCardUserId').value = normalizedUserId;
+        container.innerHTML = loading();
+
+        const params = new URLSearchParams(
+          getFilters({ includeLimit: false, includeUserId: false })
+        );
+        params.set('userId', normalizedUserId);
+        params.set('limit', '120');
+
+        const res = await authFetch(`/api/admin/analytics/user-card?${params.toString()}`);
+        if (!res) return;
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          container.innerHTML = emptyHtml(
+            data.error || 'Не удалось загрузить карточку пользователя'
+          );
+          return;
+        }
+        renderUserCard(data);
+      }
+
+      function clearUserCard() {
+        activeUserCardUserId = '';
+        document.getElementById('userCardUserId').value = '';
+        document.getElementById('userCardContainer').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">👤</div>
+        <p>Введите User ID, чтобы открыть карточку пользователя</p>
+      </div>`;
+      }
+
+      function renderTable(headers, rows) {
+        if (!rows.length) return emptyHtml();
+        return `<div class="table-wrap"><table>
+    <thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${rows.join('')}</tbody>
+  </table></div>`;
+      }
+
+      function showDeleteStatsResult(message, type = 'success') {
+        const root = document.getElementById('deleteStatsResult');
+        if (!root) return;
+        root.innerHTML = `<div class="alert alert-${type} show">${esc(message)}</div>`;
+      }
+
+      async function deleteUserAnalytics() {
+        if (user?.role !== 'admin') {
+          showDeleteStatsResult('Удаление доступно только администратору', 'error');
+          return;
+        }
+
+        const userId = document.getElementById('deleteStatsUserId').value.trim();
+        const dataset = document.getElementById('deleteStatsDataset').value || 'all';
+        if (!userId) {
+          showDeleteStatsResult('Введите User ID', 'error');
+          return;
+        }
+
+        const labelMap = {
+          all: 'полностью',
+          opens: 'открытия',
+          messages: 'сообщения',
+          events: 'выдачи',
+          clicks: 'клики',
+        };
+        const actionLabel = labelMap[dataset] || 'выбранный раздел';
+        const confirmed = window.confirm(
+          `Удалить ${actionLabel} для пользователя ${userId}? Это действие необратимо.`
+        );
+        if (!confirmed) return;
+
+        const btn = document.getElementById('deleteStatsBtn');
+        const previousText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Удаление...';
+        showDeleteStatsResult('Выполняется удаление...', 'success');
+
+        try {
+          const res = await authFetch('/api/admin/analytics/delete-by-user', {
+            method: 'POST',
+            body: JSON.stringify({ userId, dataset }),
+          });
+          if (!res) return;
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.success) {
+            showDeleteStatsResult(data.error || 'Не удалось удалить статистику', 'error');
+            return;
+          }
+
+          showDeleteStatsResult(`Удалено записей: ${data.totalDeleted}`, 'success');
+          if (activeUserCardUserId === userId) {
+            await loadUserCard(userId, { silent: true });
+          }
+          await loadAll();
+        } finally {
+          btn.disabled = false;
+          btn.textContent = previousText;
+        }
+      }
+
+      // ——— Loaders ———
+      async function loadOpens() {
+        const container = document.getElementById('opensContainer');
+        container.innerHTML = loading();
+        const q = getFilters();
+        const res = await authFetch(`/api/admin/analytics/widget-opens?${q}`);
+        if (!res) return;
+        const data = await res.json();
+        document.getElementById('s-opens').textContent = data.data?.length ?? '—';
+        if (!data.success || !data.data.length) {
+          container.innerHTML = emptyHtml();
+          return;
+        }
+        const rows = data.data.map(
+          (d) => `<tr>
+    <td class="td-mono">${esc(d.userId || d.user_id || '—')}</td>
+    <td class="td-mono">${fmtDate(d.timestamp || d.createdAt)}</td>
+    <td class="td-mono">${esc(d.sessionId || d.session_id || '—')}</td>
+    <td>${esc(d.page || d.url || '—')}</td>
+  </tr>`
+        );
+        container.innerHTML = renderTable(['User ID', 'Время', 'Сессия', 'Страница'], rows);
+      }
+
+      async function loadMessages() {
+        const container = document.getElementById('messagesContainer');
+        container.innerHTML = loading();
+        const q = getFilters();
+        const res = await authFetch(`/api/admin/analytics/messages?${q}`);
+        if (!res) return;
+        const data = await res.json();
+        document.getElementById('s-msgs').textContent = data.data?.length ?? '—';
+        if (!data.success || !data.data.length) {
+          container.innerHTML = emptyHtml();
+          return;
+        }
+        const rows = data.data.map(
+          (d) => `<tr>
+    <td class="td-mono">${esc(d.userId || d.user_id || '—')}</td>
+    <td class="td-mono">${fmtDate(d.timestamp || d.createdAt)}</td>
+    <td class="td-text">${esc(d.message || d.text || d.content || '—')}</td>
+  </tr>`
+        );
+        container.innerHTML = renderTable(['User ID', 'Время', 'Сообщение'], rows);
+      }
+
+      async function loadEvents() {
+        const container = document.getElementById('eventsContainer');
+        container.innerHTML = loading();
+        const q = getFilters();
+        const res = await authFetch(`/api/admin/analytics/events?${q}`);
+        if (!res) return;
+        const data = await res.json();
+        document.getElementById('s-events').textContent = data.data?.length ?? '—';
+        if (!data.success || !data.data.length) {
+          container.innerHTML = emptyHtml();
+          return;
+        }
+        const rows = data.data.map((d) => {
+          const payload = d && typeof d.payload === 'object' ? d.payload : {};
+          const rawEvents =
+            d.events ?? d.eventsList ?? payload.events ?? payload.eventsList ?? null;
+          const eventsArr = Array.isArray(rawEvents) ? rawEvents : [];
+          const badges = eventsArr
+            .map((e) => {
+              const label =
+                e && typeof e === 'object' ? e.name || e.title || e.eventName || e.label || '' : e;
+              const normalized = String(label || '').trim();
+              if (!normalized) return '';
+              return `<span style="background:var(--bg4);padding:2px 7px;border-radius:5px;font-size:12px;margin:2px 2px 0 0;display:inline-block">${esc(normalized)}</span>`;
+            })
+            .join('');
+          const numericCount = Number(
+            d.count ?? d.eventsCount ?? payload.count ?? payload.eventsCount ?? 0
+          );
+          const fallbackCount =
+            Number.isFinite(numericCount) && numericCount >= 0 ? numericCount : 0;
+          const eventsCount = eventsArr.length > 0 ? eventsArr.length : fallbackCount;
+          return `<tr>
+      <td class="td-mono">${esc(d.userId || d.user_id || '—')}</td>
+      <td class="td-mono">${fmtDate(d.timestamp || d.createdAt)}</td>
+      <td>${badges || esc(d.eventName || payload.eventName || d.title || '—')}</td>
+      <td style="text-align:center"><strong>${eventsCount}</strong></td>
+    </tr>`;
+        });
+        container.innerHTML = renderTable(['User ID', 'Время', 'События', 'Кол-во'], rows);
+      }
+
+      async function loadClicks() {
+        const container = document.getElementById('clicksContainer');
+        container.innerHTML = loading();
+        const q = getFilters();
+        const res = await authFetch(`/api/admin/analytics/event-clicks?${q}`);
+        if (!res) return;
+        const data = await res.json();
+        document.getElementById('s-clicks').textContent = data.data?.length ?? '—';
+        if (!data.success || !data.data.length) {
+          container.innerHTML = emptyHtml();
+          return;
+        }
+        const rows = data.data.map(
+          (d) => `<tr>
+    <td class="td-mono">${esc(d.userId || d.user_id || '—')}</td>
+    <td class="td-mono">${fmtDate(d.timestamp || d.createdAt)}</td>
+    <td>${esc(d.eventName || d.event_name || d.title || '—')}</td>
+    <td><a href="${esc(d.url || '#')}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-size:13px">${esc(d.url || '—')}</a></td>
+  </tr>`
+        );
+        container.innerHTML = renderTable(['User ID', 'Время', 'Событие', 'URL'], rows);
+      }
+
+      async function loadAll() {
+        await Promise.all([loadOpens(), loadMessages(), loadEvents(), loadClicks(), loadFunnel()]);
+        if (activeUserCardUserId) {
+          await loadUserCard(activeUserCardUserId, { silent: true });
+        }
+      }
+
+      if (user?.role !== 'admin') {
+        const deleteBtn = document.getElementById('deleteStatsBtn');
+        if (deleteBtn) {
+          deleteBtn.disabled = true;
+        }
+        showDeleteStatsResult('Удаление статистики доступно только администратору', 'error');
+      }
+
+      await loadDomainFilterOptions();
+      loadAll();
+    </script>
+  </body>
+</html>
